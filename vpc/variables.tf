@@ -12,3 +12,8 @@ variable "availability_zone" {
   default = "sa-east-1a"
   type    = string
 }
+
+variable "pub_key_path" {
+  default = "~/.ssh/id_rsa.pub"
+  type    = string
+}
