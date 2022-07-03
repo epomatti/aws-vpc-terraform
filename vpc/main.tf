@@ -106,7 +106,7 @@ resource "aws_default_security_group" "default" {
 
 resource "aws_security_group" "web" {
   name        = "${var.project_name}-ec2-public-sc"
-  description = "Allow TLS inbound traffic"
+  description = "Allow Traffic"
   vpc_id      = aws_vpc.main.id
 
   tags = {
@@ -139,6 +139,26 @@ resource "aws_security_group_rule" "web_all_outbound" {
   protocol          = "tcp"
   cidr_blocks       = ["0.0.0.0/0"]
   security_group_id = aws_security_group.web.id
+}
+
+
+resource "aws_security_group" "private" {
+  name        = "${var.project_name}-ec2-private-sc"
+  description = "Allow SSH inbound traffic"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-ec2-private-sc"
+  }
+}
+
+resource "aws_security_group_rule" "private_ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.private.id
 }
 
 
@@ -203,7 +223,7 @@ resource "aws_instance" "web" {
   availability_zone    = var.availability_zone
   iam_instance_profile = aws_iam_instance_profile.web.id
   user_data            = file("${path.module}/public.userdata.sh")
-  
+
   network_interface {
     network_interface_id = aws_network_interface.web.id
     device_index         = 0
@@ -219,42 +239,40 @@ resource "aws_instance" "web" {
 }
 
 
+### EC2 Private ###
 
+resource "aws_network_interface" "private" {
+  subnet_id       = aws_subnet.private.id
+  security_groups = [aws_security_group.private.id]
 
+  tags = {
+    Name = "ni-${var.project_name}-private"
+  }
+}
 
+resource "aws_iam_instance_profile" "private" {
+  name = "private-profile"
+  role = aws_iam_role.bajor-ec2.id
+}
 
-# resource "aws_key_pair" "private" {
-#   key_name   = "private-deployer-key"
-#   public_key = file(var.pub_key_path)
-# }
+resource "aws_instance" "private" {
+  ami           = "ami-037c192f0fa52a358"
+  instance_type = var.instance_type
 
-# resource "aws_network_interface" "private" {
-#   subnet_id       = aws_subnet.private.id
-#   security_groups = [aws_security_group.private.id]
+  availability_zone    = var.availability_zone
+  iam_instance_profile = aws_iam_instance_profile.private.id
+  user_data            = file("${path.module}/private.userdata.sh")
 
-#   tags = {
-#     Name = "ni-${var.project_name}-private"
-#   }
-# }
+  network_interface {
+    network_interface_id = aws_network_interface.private.id
+    device_index         = 0
+  }
 
-# resource "aws_instance" "private" {
-#   ami           = "ami-037c192f0fa52a358"
-#   instance_type = var.instance_type
+  lifecycle {
+    ignore_changes = [ami]
+  }
 
-#   availability_zone    = var.availability_zone
-#   iam_instance_profile = aws_iam_instance_profile.private.id
-#   user_data            = file("${path.module}/private.userdata.sh")
-
-#   network_interface {
-#     network_interface_id = aws_network_interface.private.id
-#     device_index         = 0
-#   }
-
-#   lifecycle {
-#     ignore_changes = [ami]
-#   }
-
-#   tags = {
-#     Name = "ec2-${var.project_name}-private"
-#   }
-# }
+  tags = {
+    Name = "ec2-${var.project_name}-private"
+  }
+}
