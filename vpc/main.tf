@@ -97,6 +97,51 @@ resource "aws_route_table_association" "private_subnet" {
   route_table_id = aws_route_table.private.id
 }
 
+### Security Group ###
+
+# Clean-up Default
+resource "aws_default_security_group" "default" {
+  vpc_id = aws_vpc.main.id
+}
+
+resource "aws_security_group" "web" {
+  name        = "${var.project_name}-ec2-public-sc"
+  description = "Allow TLS inbound traffic"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.project_name}-ec2-public-sc"
+  }
+}
+
+resource "aws_security_group_rule" "web_ssh" {
+  type              = "ingress"
+  from_port         = 22
+  to_port           = 22
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.web.id
+}
+
+resource "aws_security_group_rule" "web_http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.web.id
+}
+
+resource "aws_security_group_rule" "web_all_outbound" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 65535
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.web.id
+}
+
+
 ### IAM Role ###
 
 resource "aws_iam_role" "bajor-ec2" {
@@ -146,9 +191,18 @@ resource "aws_iam_role_policy_attachment" "ssm-managed-instance-core" {
 #   }
 # }
 
+# resource "aws_iam_instance_profile" "web" {
+#   name = "web-profile"
+#   role = aws_iam_role.bajor-ec2.id
+# }
+
 # resource "aws_instance" "web" {
 #   ami           = "ami-037c192f0fa52a358"
 #   instance_type = "t2.micro"
+
+#   availability_zone    = var.availability_zone
+#   iam_instance_profile = aws_iam_instance_profile.web.id
+#   user_data            = file("${path.module}/public.userdata.sh")
 
 #   network_interface {
 #     network_interface_id = aws_network_interface.web.id
