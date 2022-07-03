@@ -14,7 +14,7 @@ provider "aws" {
   region = var.region
 }
 
-// VPC
+### VPC ###
 resource "aws_vpc" "main" {
   cidr_block           = "10.0.0.0/16"
   instance_tenancy     = "default"
@@ -25,7 +25,7 @@ resource "aws_vpc" "main" {
   }
 }
 
-// Internet Gateway
+### Internet Gateway ###
 
 resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
@@ -35,7 +35,7 @@ resource "aws_internet_gateway" "main" {
   }
 }
 
-// Route Table
+### Route Tables ###
 
 resource "aws_default_route_table" "internet" {
   default_route_table_id = aws_vpc.main.default_route_table_id
@@ -50,15 +50,28 @@ resource "aws_default_route_table" "internet" {
   }
 }
 
+resource "aws_route_table" "private" {
+  vpc_id = aws_vpc.main.id
 
-// Subnets
+  # route {
+  #   cidr_block = "10.0.1.0/24"
+  #   gateway_id = aws_internet_gateway.example.id
+  # }
+
+  tags = {
+    Name = "private-rt"
+  }
+}
+
+
+### Subnets ###
 
 resource "aws_subnet" "subnet_public" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.10.0/24"
   availability_zone = var.availability_zone
 
-  // Auto-assign public IPv4 address
+  # Auto-assign public IPv4 address
   map_public_ip_on_launch = true
 
   tags = {
@@ -74,5 +87,10 @@ resource "aws_subnet" "subnet_private" {
   tags = {
     Name = "${var.project_name}-private"
   }
+}
+
+resource "aws_route_table_association" "private_subnet" {
+  subnet_id      = aws_subnet.subnet_private.id
+  route_table_id = aws_route_table.private.id
 }
 
