@@ -180,14 +180,7 @@ resource "aws_iam_role_policy_attachment" "ssm-managed-instance-core" {
   policy_arn = data.aws_iam_policy.AmazonSSMManagedInstanceCore.arn
 }
 
-### Key Pair ###
-
-resource "aws_key_pair" "default" {
-  key_name   = "web-deployer-key"
-  public_key = file(var.pub_key_path)
-}
-
-### EC2 ###
+### EC2 Web ###
 
 resource "aws_network_interface" "web" {
   subnet_id       = aws_subnet.public.id
@@ -210,7 +203,7 @@ resource "aws_instance" "web" {
   availability_zone    = var.availability_zone
   iam_instance_profile = aws_iam_instance_profile.web.id
   user_data            = file("${path.module}/public.userdata.sh")
-
+  
   network_interface {
     network_interface_id = aws_network_interface.web.id
     device_index         = 0
@@ -224,3 +217,44 @@ resource "aws_instance" "web" {
     Name = "ec2-${var.project_name}-web"
   }
 }
+
+
+
+
+
+
+# resource "aws_key_pair" "private" {
+#   key_name   = "private-deployer-key"
+#   public_key = file(var.pub_key_path)
+# }
+
+# resource "aws_network_interface" "private" {
+#   subnet_id       = aws_subnet.private.id
+#   security_groups = [aws_security_group.private.id]
+
+#   tags = {
+#     Name = "ni-${var.project_name}-private"
+#   }
+# }
+
+# resource "aws_instance" "private" {
+#   ami           = "ami-037c192f0fa52a358"
+#   instance_type = var.instance_type
+
+#   availability_zone    = var.availability_zone
+#   iam_instance_profile = aws_iam_instance_profile.private.id
+#   user_data            = file("${path.module}/private.userdata.sh")
+
+#   network_interface {
+#     network_interface_id = aws_network_interface.private.id
+#     device_index         = 0
+#   }
+
+#   lifecycle {
+#     ignore_changes = [ami]
+#   }
+
+#   tags = {
+#     Name = "ec2-${var.project_name}-private"
+#   }
+# }
