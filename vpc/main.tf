@@ -25,10 +25,41 @@ resource "aws_vpc" "main" {
   }
 }
 
+// Internet Gateway
+
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "igw-${var.project_name}"
+  }
+}
+
+// Route Table
+
+resource "aws_default_route_table" "internet" {
+  default_route_table_id = aws_vpc.main.default_route_table_id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+
+  tags = {
+    Name = "internet-rt"
+  }
+}
+
+
+// Subnets
+
 resource "aws_subnet" "subnet_public" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.10.0/24"
   availability_zone = var.availability_zone
+
+  // Auto-assign public IPv4 address
+  map_public_ip_on_launch = true
 
   tags = {
     Name = "${var.project_name}-public"
@@ -44,3 +75,4 @@ resource "aws_subnet" "subnet_private" {
     Name = "${var.project_name}-private"
   }
 }
+
