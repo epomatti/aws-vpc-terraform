@@ -16,8 +16,10 @@ provider "aws" {
 
 ### VPC ###
 resource "aws_vpc" "main" {
-  cidr_block           = "10.0.0.0/16"
-  instance_tenancy     = "default"
+  cidr_block       = "10.0.0.0/16"
+  instance_tenancy = "default"
+
+  # Enable DNS hostnames 
   enable_dns_hostnames = true
 
   tags = {
@@ -66,7 +68,7 @@ resource "aws_route_table" "private" {
 
 ### Subnets ###
 
-resource "aws_subnet" "subnet_public" {
+resource "aws_subnet" "public" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.10.0/24"
   availability_zone = var.availability_zone
@@ -79,7 +81,7 @@ resource "aws_subnet" "subnet_public" {
   }
 }
 
-resource "aws_subnet" "subnet_private" {
+resource "aws_subnet" "private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.90.0/24"
   availability_zone = var.availability_zone
@@ -89,8 +91,71 @@ resource "aws_subnet" "subnet_private" {
   }
 }
 
+# Assign the private route table to the private subnet
 resource "aws_route_table_association" "private_subnet" {
-  subnet_id      = aws_subnet.subnet_private.id
+  subnet_id      = aws_subnet.private.id
   route_table_id = aws_route_table.private.id
 }
 
+### IAM Role ###
+
+resource "aws_iam_role" "bajor-ec2" {
+  name = "bajor-ec2"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+data "aws_iam_policy" "AmazonS3FullAccess" {
+  arn = "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+}
+
+data "aws_iam_policy" "AmazonSSMManagedInstanceCore" {
+  arn = "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+}
+
+resource "aws_iam_role_policy_attachment" "s3-fullaccess" {
+  role       = aws_iam_role.bajor-ec2.name
+  policy_arn = data.aws_iam_policy.AmazonS3FullAccess.arn
+}
+
+resource "aws_iam_role_policy_attachment" "ssm-managed-instance-core" {
+  role       = aws_iam_role.bajor-ec2.name
+  policy_arn = data.aws_iam_policy.AmazonSSMManagedInstanceCore.arn
+}
+
+### EC2 ###
+
+# resource "aws_network_interface" "web" {
+#   subnet_id = aws_subnet.public.id
+#   # private_ips = ["172.16.10.100"]
+
+#   tags = {
+#     Name = "ni-${var.project_name}-web"
+#   }
+# }
+
+# resource "aws_instance" "web" {
+#   ami           = "ami-037c192f0fa52a358"
+#   instance_type = "t2.micro"
+
+#   network_interface {
+#     network_interface_id = aws_network_interface.web.id
+#     # device_index         = 0
+#   }
+
+#   tags = {
+#     Name = "ec2-${var.project_name}-web"
+#   }
+# }
