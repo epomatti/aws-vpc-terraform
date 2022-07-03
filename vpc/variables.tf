@@ -8,6 +8,11 @@ variable "project_name" {
   type    = string
 }
 
+variable "instance_type" {
+  default = "t2.medium"
+  type    = string
+}
+
 variable "availability_zone" {
   default = "sa-east-1a"
   type    = string

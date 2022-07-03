@@ -205,7 +205,7 @@ resource "aws_iam_instance_profile" "web" {
 
 resource "aws_instance" "web" {
   ami           = "ami-037c192f0fa52a358"
-  instance_type = "t2.micro"
+  instance_type = var.instance_type
 
   availability_zone    = var.availability_zone
   iam_instance_profile = aws_iam_instance_profile.web.id
@@ -214,6 +214,10 @@ resource "aws_instance" "web" {
   network_interface {
     network_interface_id = aws_network_interface.web.id
     device_index         = 0
+  }
+
+  lifecycle {
+    ignore_changes = [ami]
   }
 
   tags = {
