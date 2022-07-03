@@ -11,14 +11,7 @@ terraform {
 }
 
 provider "aws" {
-  region = "sa-east-1"
-}
-
-// Variables
-
-locals {
-  project_name = "bajor"
-  az1          = "sa-east-1a"
+  region = var.region
 }
 
 // VPC
@@ -28,26 +21,26 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = local.project_name
+    Name = var.project_name
   }
 }
 
 resource "aws_subnet" "subnet_public" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.10.0/24"
-  availability_zone = local.az1
+  availability_zone = var.availability_zone
 
   tags = {
-    Name = "${local.project_name}-public"
+    Name = "${var.project_name}-public"
   }
 }
 
 resource "aws_subnet" "subnet_private" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = "10.0.90.0/24"
-  availability_zone = local.az1
+  availability_zone = var.availability_zone
 
   tags = {
-    Name = "${local.project_name}-private"
+    Name = "${var.project_name}-private"
   }
 }
