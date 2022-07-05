@@ -55,10 +55,7 @@ resource "aws_default_route_table" "internet" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  # route {
-  #   cidr_block = "10.0.1.0/24"
-  #   gateway_id = aws_internet_gateway.example.id
-  # }
+  # NAT Gateway route will be added later
 
   tags = {
     Name = "private-rt"
@@ -96,6 +93,33 @@ resource "aws_route_table_association" "private_subnet" {
   subnet_id      = aws_subnet.private.id
   route_table_id = aws_route_table.private.id
 }
+
+### NAT Gateway ###
+# This will allow the private instance to connect to the internet
+
+resource "aws_eip" "nat_gateway" {
+  vpc = true
+}
+
+resource "aws_nat_gateway" "public" {
+  allocation_id = aws_eip.nat_gateway.id
+  subnet_id     = aws_subnet.public.id
+
+  tags = {
+    Name = "Bajor NAT"
+  }
+
+  # To ensure proper ordering, it is recommended to add an explicit dependency
+  # on the Internet Gateway for the VPC.
+  depends_on = [aws_internet_gateway.main]
+}
+
+resource "aws_route" "nat_gateway" {
+  route_table_id         = aws_route_table.private.id
+  nat_gateway_id         = aws_nat_gateway.public.id
+  destination_cidr_block = "0.0.0.0/0"
+}
+
 
 ### Security Group ###
 
