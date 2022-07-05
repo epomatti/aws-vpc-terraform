@@ -97,28 +97,28 @@ resource "aws_route_table_association" "private_subnet" {
 ### NAT Gateway ###
 # This will allow the private instance to connect to the internet
 
-resource "aws_eip" "nat_gateway" {
-  vpc = true
-}
+# resource "aws_eip" "nat_gateway" {
+#   vpc = true
+# }
 
-resource "aws_nat_gateway" "public" {
-  allocation_id = aws_eip.nat_gateway.id
-  subnet_id     = aws_subnet.public.id
+# resource "aws_nat_gateway" "public" {
+#   allocation_id = aws_eip.nat_gateway.id
+#   subnet_id     = aws_subnet.public.id
 
-  tags = {
-    Name = "Bajor NAT"
-  }
+#   tags = {
+#     Name = "Bajor NAT"
+#   }
 
-  # To ensure proper ordering, it is recommended to add an explicit dependency
-  # on the Internet Gateway for the VPC.
-  depends_on = [aws_internet_gateway.main]
-}
+#   # To ensure proper ordering, it is recommended to add an explicit dependency
+#   # on the Internet Gateway for the VPC.
+#   depends_on = [aws_internet_gateway.main]
+# }
 
-resource "aws_route" "nat_gateway" {
-  route_table_id         = aws_route_table.private.id
-  nat_gateway_id         = aws_nat_gateway.public.id
-  destination_cidr_block = "0.0.0.0/0"
-}
+# resource "aws_route" "nat_gateway" {
+#   route_table_id         = aws_route_table.private.id
+#   nat_gateway_id         = aws_nat_gateway.public.id
+#   destination_cidr_block = "0.0.0.0/0"
+# }
 
 
 ### Security Group ###
@@ -470,9 +470,6 @@ resource "aws_vpc_endpoint" "s3" {
   vpc_id            = aws_vpc.main.id
   service_name      = "com.amazonaws.sa-east-1.s3"
   vpc_endpoint_type = "Gateway"
-}
-
-resource "aws_vpc_endpoint_route_table_association" "private" {
-  route_table_id  = aws_route_table.private.id
-  vpc_endpoint_id = aws_vpc_endpoint.s3.id
+  auto_accept       = true
+  route_table_ids   = [aws_route_table.private.id]
 }
