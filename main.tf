@@ -264,7 +264,7 @@ resource "aws_instance" "web" {
 
   availability_zone    = var.availability_zone
   iam_instance_profile = aws_iam_instance_profile.web.id
-  user_data            = file("${path.module}/public.userdata.sh")
+  user_data            = file("${path.module}/userdata/public.userdata.sh")
 
   network_interface {
     network_interface_id = aws_network_interface.web.id
@@ -303,7 +303,7 @@ resource "aws_instance" "private" {
 
   availability_zone    = var.availability_zone
   iam_instance_profile = aws_iam_instance_profile.private.id
-  user_data            = file("${path.module}/private.userdata.sh")
+  user_data            = file("${path.module}/userdata/private.userdata.sh")
 
   network_interface {
     network_interface_id = aws_network_interface.private.id
