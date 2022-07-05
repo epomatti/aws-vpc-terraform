@@ -21,9 +21,9 @@ aws s3 ls --region 'sa-east-1'
 
 You'll need to create a bastion manually in the public subnet.
 
-If you want to use Guacamole, the policies and role are created by my Terraform scripts, only requiring to deploy the instance:
+If you want to use [Guacamole](https://aws.amazon.com/marketplace/pp/prodview-hl2sry7k37mgq), the policies and role are created by my Terraform scripts, only requiring to deploy the instance.
 
-https://aws.amazon.com/marketplace/pp/prodview-hl2sry7k37mgq
+To enter the instance use the default configuration:
 
 - **User:** guacadmin
 - **Password:** Instance ID
