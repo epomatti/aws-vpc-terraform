@@ -185,6 +185,24 @@ resource "aws_security_group_rule" "private_ssh" {
   security_group_id = aws_security_group.private.id
 }
 
+resource "aws_security_group_rule" "private_http" {
+  type              = "egress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.private.id
+}
+
+resource "aws_security_group_rule" "private_https" {
+  type              = "egress"
+  from_port         = 443
+  to_port           = 443
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.private.id
+}
+
 
 ### IAM Role ###
 
@@ -444,4 +462,17 @@ resource "aws_iam_role_policy" "example" {
   ]
 }
 EOF
+}
+
+### VPC Endpoints ###
+
+resource "aws_vpc_endpoint" "s3" {
+  vpc_id            = aws_vpc.main.id
+  service_name      = "com.amazonaws.sa-east-1.s3"
+  vpc_endpoint_type = "Gateway"
+}
+
+resource "aws_vpc_endpoint_route_table_association" "private" {
+  route_table_id  = aws_route_table.private.id
+  vpc_endpoint_id = aws_vpc_endpoint.s3.id
 }
