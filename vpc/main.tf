@@ -276,3 +276,66 @@ resource "aws_instance" "private" {
     Name = "ec2-${var.project_name}-private"
   }
 }
+
+### Guacamole ###
+
+resource "aws_iam_policy" "guacamole" {
+  name        = "GuaAWS"
+  path        = "/"
+  description = "Guacamole Policy"
+
+  policy = jsonencode({
+    Version = "2012-10-17",
+    Statement = [{
+      Action   = "sts:AssumeRole",
+      Resource = "arn:aws:iam::*:role/EC2ReadOnlyAccessRole",
+      Effect   = "Allow"
+      }, {
+      Action = [
+        "logs:CreateLogGroup",
+        "logs:CreateLogStream",
+        "logs:PutLogEvents",
+        "logs:DescribeLogStreams"
+      ],
+      Resource = "*",
+      Effect   = "Allow"
+    }]
+  })
+}
+
+resource "aws_iam_role" "guacamole" {
+  name = "GuaAWSBastion"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          Service = "ec2.amazonaws.com"
+        }
+      },
+    ]
+  })
+}
+
+data "aws_iam_policy" "AmazonEC2ReadOnlyAccess" {
+  arn = "arn:aws:iam::aws:policy/AmazonEC2ReadOnlyAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "AmazonEC2ReadOnlyAccess" {
+  role       = aws_iam_role.guacamole.name
+  policy_arn = data.aws_iam_policy.AmazonEC2ReadOnlyAccess.arn
+}
+
+resource "aws_iam_role_policy_attachment" "guacamole" {
+  role       = aws_iam_role.guacamole.name
+  policy_arn = aws_iam_policy.guacamole.arn
+}
+
+resource "aws_iam_instance_profile" "guacamole" {
+  name = "guacamole"
+  role = aws_iam_role.guacamole.id
+}
